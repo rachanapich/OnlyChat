@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+</head>
+<body>
+<h1>Group Chat Testing</h1>
+<div id="chat-messages"></div>
+<div>
+    <form id="chat-form">
+        <input type="text" id="message-input" placeholder="Enter message">
+        <button type="submit">Send</button>
+    </form>
+</div>
+<script>
+    var stompClient = null;
+    var groupId = '23875284-d255-4ae7-8522-d49249c7c716'; // Replace with the actual group ID
+    var userId = '77b907b7-30bf-4fee-b770-89db302b2c8c'; // Replace with the actual user ID
+
+    function connect() {
+        var socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/group/' + groupId, function (message) {
+                var chatMessage = JSON.parse(message.body);
+                showChatMessage(chatMessage.message, chatMessage.sender.username);
+            });
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        console.log("Disconnected");
+    }
+
+    function sendChatMessage(message) {
+        const payload = {
+            'group_id': groupId,
+            'message': message,
+            'user_id': userId
+        };
+
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        const requestOptions = {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        };
+
+        fetch('/chats', requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                // Handle the response data as needed
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the request
+            });
+    }
+
+
+    function showChatMessage(message, username) {
+        $("#chat-messages").append("<p>" + username +" : "+ message + "</p>");
+    }
+
+    $(function () {
+        $("#chat-form").on('submit', function (e) {
+            e.preventDefault();
+            var messageInput = $("#message-input").val();
+            if (messageInput.trim() !== '') {
+                sendChatMessage(messageInput);
+                $("#message-input").val('');
+            }
+        });
+
+        connect();
+    });
+</script>
+</body>
+</html>
