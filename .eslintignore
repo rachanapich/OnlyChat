@@ -1,0 +1,5 @@
+// .eslintignore
+build/*
+public/*
+src/setupTests.js
+src/reportWebVitals.js
